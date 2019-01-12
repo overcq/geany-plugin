@@ -1278,17 +1278,17 @@ Cont_line:  sttf.chrg.cpMin = cnt_end + editor_get_eol_char_len( document->edito
         _Bool tag_weak = no;
         while( g_unichar_isalpha( u = g_utf8_get_char(p) )
         && ( !tag_weak && !g_unichar_isupper(u) && ( tag_weak = yes ), yes )
-        && ( p = g_utf8_next_char(p), ++i < 5 )
+        && ( p = g_utf8_next_char(p), ++i != 5 )
         && *p
         ){}
         if( i
-        && i < 5
+        && i != 5
         )
         {   if( *p )
-            {   if( g_unichar_ispunct(u)
+            {   if( g_unichar_ispunct(u) && u != '_'
                 || g_unichar_isspace(u)
                 ){  char *tag_0 = p;
-                    while( g_unichar_ispunct( g_utf8_get_char(p) )
+                    while( g_unichar_ispunct( u = g_utf8_get_char(p) ) && u != '_'
                     && *( p = g_utf8_next_char(p) )
                     ){}
                     while( g_unichar_isspace( g_utf8_get_char(p) )
