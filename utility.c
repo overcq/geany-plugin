@@ -32,7 +32,6 @@ static unsigned H_ocq_E_doc_com_I_idle_update_S = 0;
 //==============================================================================
 GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
-GeanyFunctions *geany_functions;
 PLUGIN_VERSION_CHECK( GEANY_API_VERSION )
 PLUGIN_SET_INFO( "Geany‐ocq utility"
 , "•open project directory: open files listed by file globs in the autoopen file of a directory.\n"
@@ -174,7 +173,9 @@ H_ocq_E_geany_I_open_directory( void
             g_hash_table_insert( dir_globs, line, hash_e );
             global_globs = 0;
         }else
+        {   g_free(line);
             global_globs = current_array;
+        }
         while( line = g_data_input_stream_read_line_utf8( data_stream, &l, null, &error ))
         {   if( !*line )
             {   g_free(line);
