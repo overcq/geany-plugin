@@ -234,13 +234,15 @@ H_ocq_E_geany_I_open_directory( void
             dir_2 = g_file_dup(dir);
             O{  if( !strpbrk( dir_names[ dir_names_i ], "*?" ))
                 {   dir_enums[ dir_names_i ] = 0;
-                    GFile *dir_2_ = g_file_get_child( dir_2, dir_names[ dir_names_i ]);
+                    GFile *dir_2_ = g_file_get_child( dir_2, dir_names[ dir_names_i ] );
+                    ui_set_statusbar( yes, "%s", "0" );
                     g_object_unref( dir_2 );
                     dir_2 = dir_2_;
                     goto Single_no_glob;
                 }
                 if( !( dir_enums[ dir_names_i ] = g_file_enumerate_children( dir_2, G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, G_FILE_QUERY_INFO_NONE, null, &error )))
-                 {   for( unsigned i = 0; i != dir_names_i; i++ )
+                {   ui_set_statusbar( yes, "%s", "1" );
+                    for( unsigned i = 0; i != dir_names_i; i++ )
                         if( dir_enums[i] )
                             g_object_unref( dir_enums[i] );
                     g_strfreev( dir_names );
@@ -252,10 +254,11 @@ H_ocq_E_geany_I_open_directory( void
                     g_object_unref(dir);
                     goto End;
                 }
-                GPatternSpec *pattern = g_pattern_spec_new( dir_names[ dir_names_i ]);
+                GPatternSpec *pattern = g_pattern_spec_new( dir_names[ dir_names_i ] );
                 O{  GFileInfo *file_info = g_file_enumerator_next_file( dir_enums[ dir_names_i ], null, &error );
                     if( !file_info )
-                    {   g_object_unref( dir_enums[ dir_names_i ]);
+                    {   ui_set_statusbar( yes, "%s", "2" );
+                        g_object_unref( dir_enums[ dir_names_i ] );
                         g_pattern_spec_free(pattern);
                         if( !dir_names_i )
                             break;
@@ -282,19 +285,25 @@ H_ocq_E_geany_I_open_directory( void
                     g_object_unref( dir_2 );
                     dir_2 = dir_2_;
 Single_no_glob:     if( ++dir_names_i != dir_names_n )
-                    {   if( dir_enums[ dir_names_i - 1 ])
+                    {   if( dir_enums[ dir_names_i - 1 ] )
                             g_pattern_spec_free(pattern);
                         break;
                     }
 No_glob:            ;GFileEnumerator *dir_enum;
                     if( !( dir_enum = g_file_enumerate_children( dir_2, G_FILE_ATTRIBUTE_STANDARD_NAME, G_FILE_QUERY_INFO_NONE, null, &error )))
-                    {   if( !no_glob )
-                        {   if( dir_enums[ dir_names_i - 1 ])
+                    {   ui_set_statusbar( yes, "%s", "3" );
+                        if( !no_glob )
+                        {   if( dir_enums[ dir_names_i - 1 ] )
                                 g_pattern_spec_free(pattern);
                             for( unsigned i = 0; i != dir_names_i; i++ )
                                 if( dir_enums[i] )
                                     g_object_unref( dir_enums[i] );
                             g_strfreev( dir_names );
+                        }
+                        if( error->code == G_IO_ERROR_NOT_FOUND )
+                        {   g_clear_error( &error );
+                            ui_set_statusbar( yes, "%s", "5" );
+                            goto No_glob_end;
                         }
                         g_object_unref( dir_2 );
                         g_slist_free_full( files, H_ocq_E_geany_I_open_directory_I_slist_free1 );
@@ -305,7 +314,8 @@ No_glob:            ;GFileEnumerator *dir_enum;
                         goto End;
                     }
                     while( file_info = g_file_enumerator_next_file( dir_enum, null, &error ))
-                    {   const char *filename_ = g_file_info_get_name( file_info );
+                    {   ui_set_statusbar( yes, "%s", "4" );
+                        const char *filename_ = g_file_info_get_name( file_info );
                         char *filename = utils_get_utf8_from_locale( filename_ );
                         g_object_unref( file_info );
                         unsigned filename_l = strlen(filename);
@@ -350,7 +360,7 @@ No_glob:            ;GFileEnumerator *dir_enum;
                     g_object_unref( dir_enum );
                     if(error)
                     {   if( !no_glob )
-                        {   if( dir_enums[ dir_names_i - 1 ])
+                        {   if( dir_enums[ dir_names_i - 1 ] )
                                 g_pattern_spec_free(pattern);
                             for( unsigned i = 0; i != dir_names_i; i++ )
                                 if( dir_enums[i] )
@@ -367,22 +377,22 @@ No_glob:            ;GFileEnumerator *dir_enum;
                     }
                     if( no_glob )
                         goto No_glob_end;
-                    if( !dir_enums[ --dir_names_i ])
-                    {   if( dir_enums[ dir_names_i ])
+                    if( !dir_enums[ --dir_names_i ] )
+                    {   if( dir_enums[ dir_names_i ] )
                             g_pattern_spec_free(pattern);
                         while( dir_names_i )
                         {   dir_names_i--;
                             dir_2_ = g_file_get_parent( dir_2 );
                             g_object_unref( dir_2 );
                             dir_2 = dir_2_;
-                            if( dir_enums[ dir_names_i ])
+                            if( dir_enums[ dir_names_i ] )
                                 break;
                         }
                         if( !dir_names_i
                         && !dir_enums[ dir_names_i ]
                         )
                             break;
-                        pattern = g_pattern_spec_new( dir_names[ dir_names_i ]);
+                        pattern = g_pattern_spec_new( dir_names[ dir_names_i ] );
                     }
                     dir_2_ = g_file_get_parent( dir_2 );
                     g_object_unref( dir_2 );
@@ -1556,7 +1566,7 @@ H_ocq_E_geany_X_document_close( GObject *obj
         g_free( tmp_file_templ );
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-static void (*H_ocq_E_geany_Q_action_S[])(void) =
+static void ( *H_ocq_E_geany_Q_action_S[] )(void) =
 { H_ocq_E_geany_I_open_directory
 , H_ocq_E_geany_I_export_to_html
 , H_ocq_E_geany_I_restyle_source_text
