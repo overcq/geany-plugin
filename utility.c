@@ -515,7 +515,9 @@ H_ocq_E_compile_I_exec_Q_stderr_X_watch( GIOChannel *src
                 )
                     s_1 += 22;
                 if( H_ocq_E_compile_I_make_S_coux_project )
-                {   char *s_2 = g_utf8_strchr( s_1, -1, ':' );
+                {   while( g_str_has_prefix( s_1, "../" ))
+                        s_1 += 6;
+                    char *s_2 = g_utf8_strchr( s_1, -1, ':' );
                     if( s_2 )
                     {   *s_2 = '\0';
                         if( g_str_has_suffix( s_1, ".c" ))
