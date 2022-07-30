@@ -8,4 +8,4 @@
 * export source code to ‘html’ fragment.
 * and some experimental functions.
 
-Description in Polish: https://ocq430.wixsite.com/website/post/zastosowanie-mojego-rozszerzenia-geany-geany-ocq-utility
+Description in Polish: https://overcq.ct8.pl/zastosowanie-mojego-rozszerzenia-geany-ocq-utility.html
