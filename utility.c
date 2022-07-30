@@ -34,13 +34,13 @@ GeanyPlugin *geany_plugin;
 GeanyData *geany_data;
 PLUGIN_VERSION_CHECK( GEANY_API_VERSION )
 PLUGIN_SET_INFO( "Geany‐ocq utility"
-, "•open project directory: open files listed by file globs in the autoopen file of a directory.\n"
-  "•universal “make” runner (extended for “.cx”) with dynamic assignment of a project (filesystem directory tree) for opened source file.\n"
-  "•‟doc‐com”: extractor of comments from a source file.\n"
-  "•export source code to ‘html’ fragment.\n"
-  "•and some experimental functions."
+, "• Open project directory: open files listed by file globs in the autoopen file of a directory.\n"
+  "• Universal “make” runner (extended for “.cx”) with dynamic assignment of a project (filesystem directory tree) for opened source file.\n"
+  "• Doc‐com: extractor of comments from a source file.\n"
+  "• Export source code to ‘html’ fragment.\n"
+  "• And some experimental functions."
 , "2.8"
-, "Geany‐ocq, Ltd."
+, "Janusz Augustyński"
 );
 static
 void
