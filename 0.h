@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <geanyplugin.h>
+#include <SciLexer.h>
 //==============================================================================
 #define H_ocq_J_s_(s) #s
 #define H_ocq_J_s(s) H_ocq_J_s_(s)

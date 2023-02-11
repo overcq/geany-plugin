@@ -6,9 +6,9 @@
 *         source code, “make”, “.cx”, system administration and unused tools
 * ©overcq                on ‟Gentoo Linux 13.0” “x86_64”             2015‒1‒13 *
 *******************************************************************************/
-//założenia:
-//“stdout” i “stderr” “exec()” są w “UTF-8”.
-//jak również wszystko i tak powinno być w “UTF-8”, gdzie nie zauważone i dlatego nie wyłączane z obsługi.
+// Założenia:
+// “stdout” i “stderr” “exec()” są w UTF-8.
+// Jak również wszystko i tak powinno być w UTF-8, gdzie nie zauważone i dlatego nie wyłączane z obsługi.
 //==============================================================================
 #include "0.h"
 //==============================================================================
@@ -29,19 +29,10 @@ static int H_ocq_E_geany_S_last_document = 0, H_ocq_E_geany_S_current_document =
 static int H_ocq_E_geany_I_open_directory_X_folder_S_timeout = 0;
 static GtkWidget *H_ocq_E_doc_com_S_page = null;
 static unsigned H_ocq_E_doc_com_I_idle_update_S = 0;
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static GeanyPlugin *H_ocq_E_geany_S_plugin;
+#define geany_data H_ocq_E_geany_S_plugin->geany_data
 //==============================================================================
-GeanyPlugin *geany_plugin;
-GeanyData *geany_data;
-PLUGIN_VERSION_CHECK( GEANY_API_VERSION )
-PLUGIN_SET_INFO( "Geany‐ocq utility"
-, "• Open project directory: open files listed by file globs in the autoopen file of a directory.\n"
-  "• Universal “make” runner (extended for “.cx”) with dynamic assignment of a project (filesystem directory tree) for opened source file.\n"
-  "• Doc‐com: extractor of comments from a source file.\n"
-  "• Export source code to ‘html’ fragment.\n"
-  "• And some experimental functions."
-, "2.8"
-, "Janusz Augustyński"
-);
 static
 void
 H_ocq_E_geany_I_about_plugin( void
@@ -51,11 +42,11 @@ H_ocq_E_geany_I_about_plugin( void
       "⁂\n"
       "‟%s %s” by %s\n"
       "%s"
-    , geany_plugin->info->name
-    , geany_plugin->info->name
-    , geany_plugin->info->version
-    , geany_plugin->info->author
-    , geany_plugin->info->description
+    , H_ocq_E_geany_S_plugin->info->name
+    , H_ocq_E_geany_S_plugin->info->name
+    , H_ocq_E_geany_S_plugin->info->version
+    , H_ocq_E_geany_S_plugin->info->author
+    , H_ocq_E_geany_S_plugin->info->description
     );
 }
 //==============================================================================
@@ -273,7 +264,7 @@ H_ocq_E_geany_I_open_directory( void
                     const char *filename_ = g_file_info_get_name( file_info );
                     char *filename = utils_get_utf8_from_locale( filename_ );
                     g_object_unref( file_info );
-                    if( !g_pattern_match_string( pattern, filename ))
+                    if( !g_pattern_spec_match_string( pattern, filename ))
                     {   g_free(filename);
                         continue;
                     }
@@ -317,7 +308,7 @@ No_glob:            ;GFileEnumerator *dir_enum;
                         unsigned glob_i;
                         for( glob_i = 0; glob_i != hash_e->globs->len; glob_i++ )
                         {   GPatternSpec *file_glob = g_ptr_array_index( hash_e->globs, glob_i );
-                            if( g_pattern_match( file_glob, filename_l, filename, filename_rev ))
+                            if( g_pattern_spec_match( file_glob, filename_l, filename, filename_rev ))
                             {   file = g_file_get_child( dir_2, filename );
                                 char *path = g_file_get_path(file);
                                 g_object_unref(file);
@@ -334,7 +325,7 @@ No_glob:            ;GFileEnumerator *dir_enum;
                         && glob_i == hash_e->globs->len
                         ){  for( glob_i = 0; glob_i != global_globs->len; glob_i++ )
                             {   GPatternSpec *global_glob = g_ptr_array_index( global_globs, glob_i );
-                                if( g_pattern_match( global_glob, filename_l, filename, filename_rev ))
+                                if( g_pattern_spec_match( global_glob, filename_l, filename, filename_rev ))
                                 {   file = g_file_get_child( dir_2, filename );
                                     char *path = g_file_get_path(file);
                                     g_object_unref(file);
@@ -427,7 +418,7 @@ H_ocq_E_compile_I_exec_X_watch( GPid pid
     H_ocq_E_compile_S_pid = ( GPid )empty;
     ui_progress_bar_stop();
     GError *error = null;
-    if( g_spawn_check_exit_status( exit_status, &error ))
+    if( g_spawn_check_wait_status( exit_status, &error ))
         ui_set_statusbar( yes, "spawn finished." );
     else
     {   if( error->domain == G_SPAWN_EXIT_ERROR )
@@ -443,8 +434,9 @@ H_ocq_E_compile_I_exec_X_watch( GPid pid
     {   msgwin_switch_tab( MSG_COMPILER, yes );
         keybindings_send_command( GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR );
     }
-    if(yes) //NDFN odczytać ustawienie dla “beep”.
-        gdk_window_beep( gtk_widget_get_window( geany_data->main_widgets->window ));
+    //NDFN Brak dostępu do zmiennej.
+    //if( prefs.beep_on_errors )
+        gdk_display_beep( gdk_display_get_default() );
     g_mutex_unlock( &H_ocq_E_geany_Q_action_S_mutex );
 }
 static
@@ -638,7 +630,7 @@ H_ocq_E_compile_I_make(
         return no;
     GFile *dir_1 = null, *dir = g_file_new_for_path( document->real_path );
     GFile *parent = g_file_get_parent(dir);
-    ///poniżej– jeśli polecenie wydane jest z głównego katalogu użytkownika, to limit podążania w hierarchii systemu plików do poniżej takiego katalogu jest intencjonalnie ignorowany.
+    // Poniżej – jeśli polecenie wydane jest z głównego katalogu użytkownika, to limit podążania w hierarchii systemu plików do poniżej takiego katalogu jest intencjonalnie ignorowany.
     GFile *min_parent_dir = null;
     if(parent)
     {   min_parent_dir = g_file_new_for_path( g_get_home_dir() );
@@ -751,7 +743,7 @@ H_ocq_E_geany_I_show_doc_com_tab( void
     keybindings_send_command( GEANY_KEY_GROUP_FOCUS, GEANY_KEYS_FOCUS_EDITOR );
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-///NDFN tabulatory nie zamieniane na odstępy.
+///NDFN Tabulatory nie zamieniane na odstępy.
 static
 void
 H_ocq_E_geany_I_export_to_html( void
@@ -762,16 +754,31 @@ H_ocq_E_geany_I_export_to_html( void
     if( !length )
         return;
     GHashTable *uni_style = g_hash_table_new( null, null );
-    //NDFN kolory potrzeba odczytać z konfiguracji.
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f5f5f ), GINT_TO_POINTER( 1 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f372b ), GINT_TO_POINTER( 2 ));
+    const GeanyLexerStyle *gls = highlighting_get_style( GEANY_FILETYPES_C, SCE_C_DEFAULT );
+    int def_foreground = gls->foreground;
+    g_print( "foreground: %x\n", gls->foreground );
+    gls = highlighting_get_style( GEANY_FILETYPES_C, SCE_C_COMMENT );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 1 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f5f5f ), GINT_TO_POINTER( 1 ));
+    gls = highlighting_get_style( GEANY_FILETYPES_C, SCE_C_COMMENTDOC );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 2 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f372b ), GINT_TO_POINTER( 2 ));
     g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x00005f ), GINT_TO_POINTER( 3 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f0000 ), GINT_TO_POINTER( 4 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x002b00 ), GINT_TO_POINTER( 5 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x005f00 ), GINT_TO_POINTER( 6 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x37005f ), GINT_TO_POINTER( 7 ));
-    g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x00375f ), GINT_TO_POINTER( 8 ));
-    int def_foreground = scintilla_send_message( document->editor->sci, SCI_STYLEGETFORE, STYLE_DEFAULT, 0 );
+    gls = highlighting_get_style( GEANY_FILETYPES_C, 7 );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 4 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x5f0000 ), GINT_TO_POINTER( 4 ));
+    gls = highlighting_get_style( GEANY_FILETYPES_C, 14 );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 5 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x002b00 ), GINT_TO_POINTER( 5 ));
+    gls = highlighting_get_style( GEANY_FILETYPES_C, 8 );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 6 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x005f00 ), GINT_TO_POINTER( 6 ));
+    gls = highlighting_get_style( GEANY_FILETYPES_C, 6 );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 7 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x37005f ), GINT_TO_POINTER( 7 ));
+    gls = highlighting_get_style( GEANY_FILETYPES_C, 9 );
+    g_hash_table_insert( uni_style, GINT_TO_POINTER( gls->foreground ), GINT_TO_POINTER( 8 ));
+    //g_hash_table_insert( uni_style, GINT_TO_POINTER( 0x00375f ), GINT_TO_POINTER( 8 ));
     GString *s_out = g_string_new( "<pre><!--" );
     char *s = DOC_FILENAME(document);
     char *s_ = strrchr( s, '/' );
@@ -788,8 +795,8 @@ H_ocq_E_geany_I_export_to_html( void
     char byte;
     for( int i = 0; i < length; i++ )
     {   byte = sci_get_char_at( document->editor->sci, i );
-        if(( byte & 0x80 ) == 0 //pierwszy bajt następnego znaku.
-        || uc_i == 5 //ostatni bajt bieżącego znaku.
+        if(( byte & 0x80 ) == 0 // Pierwszy bajt następnego znaku.
+        || uc_i == 5 // Ostatni bajt bieżącego znaku.
         )
         {   if( uc_i )
             {   int st_ = sci_get_style_at( document->editor->sci, i - uc_i );
@@ -975,7 +982,7 @@ struct H_ocq_E_geany_I_zen_snippet_Z_html_element
     _Bool id;
     _Bool class;
 };
-/**stan implementacji:
+/** Stan implementacji:
 e#
 e.
 e[a]
@@ -1409,7 +1416,7 @@ H_ocq_E_geany_X_document_new( GObject *obj
 , void *data
 ){  GeanyDocument *last_doc = document_index( H_ocq_E_geany_S_last_document );
     if( last_doc
-    && last_doc->file_name ///czyli nie nowy plik po uruchomieniu programu.
+    && last_doc->file_name // Czyli nie nowy plik po uruchomieniu programu.
     )
     {   char *s = utils_get_locale_from_utf8( last_doc->file_name );
         GFile *file = g_file_new_for_path(s);
@@ -1633,10 +1640,12 @@ H_ocq_E_geany_Q_menu_I_add_separator( GtkWidget *menu
     gtk_menu_shell_append(( void * )menu, menu_item );
 }
 //------------------------------------------------------------------------------
-void
-plugin_init(
-  GeanyData *data
-){  GtkListStore *list_store = gtk_list_store_new( 4, G_TYPE_INT, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_STRING );
+static
+gboolean
+E_ocq_Q_plugin_M( GeanyPlugin *plugin
+, void *data
+){  H_ocq_E_geany_S_plugin = plugin;
+    GtkListStore *list_store = gtk_list_store_new( 4, G_TYPE_INT, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_STRING );
     H_ocq_E_doc_com_S_page = gtk_tree_view_new_with_model(( void * )list_store );
     g_object_unref( list_store );
     gtk_tree_view_set_activate_on_single_click(( void * )H_ocq_E_doc_com_S_page, yes );
@@ -1655,8 +1664,8 @@ plugin_init(
     gtk_widget_show( H_ocq_E_doc_com_S_page );
     gtk_widget_show( scrolled_window );
     H_ocq_E_doc_com_I_idle_update_M();
-    H_ocq_E_geany_Q_action_Z_keyboard_group_S = plugin_set_key_group( geany_plugin
-    , geany_plugin->info->name
+    H_ocq_E_geany_Q_action_Z_keyboard_group_S = plugin_set_key_group( H_ocq_E_geany_S_plugin
+    , H_ocq_E_geany_S_plugin->info->name
     , sizeof( H_ocq_E_geany_Q_action_S ) / sizeof( *H_ocq_E_geany_Q_action_S ) + 3 + 5 + 3 + 4
     , H_ocq_E_geany_Q_action_Z_keyboard_group_X_start
     );
@@ -1725,7 +1734,7 @@ plugin_init(
       null
     , ">"
     );
-    plugin_add_toolbar_item( geany_plugin
+    plugin_add_toolbar_item( H_ocq_E_geany_S_plugin
     , ( void * )H_ocq_E_geany_Q_action_S_toolbar_button
     );
     gtk_menu_tool_button_set_menu(( void * )H_ocq_E_geany_Q_action_S_toolbar_button, root_menu );
@@ -1741,10 +1750,12 @@ plugin_init(
     g_signal_connect(( void * )H_ocq_E_geany_Q_action_S_toolbar_button, "clicked", ( void * )H_ocq_E_geany_Q_action_Z_menu_X_start, GSIZE_TO_POINTER( H_ocq_E_geany_Q_action_Z_menu_I_add_S_action_id ));
     gtk_widget_show_all( root_menu );
     gtk_widget_show( H_ocq_E_geany_Q_action_S_toolbar_button );
+    return TRUE;
 }
+static
 void
-plugin_cleanup(
-  void
+E_ocq_Q_plugin_W( GeanyPlugin *plugin
+, void *data
 ){  H_ocq_E_doc_com_I_idle_update_W();
     gtk_notebook_remove_page(( void * )geany_data->main_widgets->message_window_notebook
     , gtk_notebook_page_num(( void * )geany_data->main_widgets->message_window_notebook, H_ocq_E_doc_com_S_page )
@@ -1755,6 +1766,21 @@ plugin_cleanup(
         g_usleep(360000);
     }
     g_ptr_array_free( H_ocq_E_geany_Q_action_S_build_target, yes );
+}
+void
+geany_load_module( GeanyPlugin *plugin
+){  plugin->info->name = "Geany‐ocq utility";
+    plugin->info->description =
+    "• Open project directory: open files listed by file globs in the autoopen file of a directory.\n"
+    "• Universal “make” runner (extended for “.cx”) with dynamic assignment of a project (filesystem directory tree) for opened source file.\n"
+    "• Doc‐com: extractor of comments from a source file.\n"
+    "• Export source code to ‘html’ fragment.\n"
+    "• And some experimental functions.";
+    plugin->info->version = "2.9";
+    plugin->info->author = "Janusz Augustyński (overcq) <ocq@tutanota.com>";
+    plugin->funcs->init = &E_ocq_Q_plugin_M;
+    plugin->funcs->cleanup = &E_ocq_Q_plugin_W;
+    GEANY_PLUGIN_REGISTER( plugin, 225 );
 }
 //------------------------------------------------------------------------------
 PluginCallback plugin_callbacks[] =
