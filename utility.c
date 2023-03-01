@@ -37,8 +37,8 @@ static
 void
 H_ocq_E_geany_I_about_plugin( void
 ){  dialogs_show_msgbox( GTK_MESSAGE_INFO
-    , "this button is placement for toolbar menu of ‟%s” plugin.\n"
-      "click arrow on the right to open menu.\n"
+    , "This button is placement for toolbar menu of ‟%s” plugin.\n"
+      "Click arrow on the right to open menu.\n"
       "⁂\n"
       "‟%s %s” by %s\n"
       "%s"
@@ -1689,11 +1689,7 @@ E_ocq_Q_plugin_M( GeanyPlugin *plugin
     H_ocq_J_gtk_menu_add_item_make( "_run", run );
     H_ocq_J_gtk_menu_add_item_make( "_install", install );
     H_ocq_E_geany_Q_menu_I_add_separator(menu);
-    H_ocq_J_gtk_menu_add_item_make( "re_compile", recompile );
-    H_ocq_J_gtk_menu_add_item_make( "re_doc", redoc );
     H_ocq_J_gtk_menu_add_item_make( "re_build", rebuild );
-    H_ocq_J_gtk_menu_add_item_make( "rebuild & r_un", rebuild-run );
-    H_ocq_J_gtk_menu_add_item_make( "re_install", reinstall );
     H_ocq_E_geany_Q_menu_I_add_separator(menu);
     H_ocq_J_gtk_menu_add_item_make( "di_st", dist );
     H_ocq_J_gtk_menu_add_item_make( "pack-_0", pack-0 );
