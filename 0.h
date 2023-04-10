@@ -19,8 +19,8 @@
 //==============================================================================
 #define H_ocq_J_s_(s) #s
 #define H_ocq_J_s(s) H_ocq_J_s_(s)
-#define _H_ocq_J_ab(a,b) a##b
-#define H_ocq_J_ab(a,b) _H_ocq_J_ab( a, b )
+#define H_ocq_J_ab_(a,b) a##b
+#define H_ocq_J_ab(a,b) H_ocq_J_ab_( a, b )
 #define H_ocq_J_a_b(a,b) H_ocq_J_ab( H_ocq_J_ab( a, _ ), b )
 //------------------------------------------------------------------------------
 #define no false

@@ -22,7 +22,7 @@ static gsize H_ocq_E_geany_Q_action_Z_menu_I_add_S_action_id;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 static GPid H_ocq_E_compile_S_pid = ( GPid )empty;
 static GIOChannel *H_ocq_E_compile_S_channel_out, *H_ocq_E_compile_S_channel_err;
-static _Bool H_ocq_E_compile_I_make_S_coux_project;
+static _Bool H_ocq_E_compile_I_make_S_cx_project;
 static _Bool H_ocq_E_compile_I_exec_X_watch_S_log_Z_message, H_ocq_E_compile_I_exec_X_watch_S_log_Z_compiler;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 static int H_ocq_E_geany_S_last_document = 0, H_ocq_E_geany_S_current_document = 0;
@@ -511,7 +511,7 @@ H_ocq_E_compile_I_exec_Q_stderr_X_watch( GIOChannel *src
                     || !strncmp( s_1, "                 from ", 22 )
                 )
                     s_1 += 22;
-                if( H_ocq_E_compile_I_make_S_coux_project )
+                if( H_ocq_E_compile_I_make_S_cx_project )
                 {   while( g_str_has_prefix( s_1, "../" ))
                         s_1 += 6;
                     char *s_2 = g_utf8_strchr( s_1, -1, ':' );
@@ -718,7 +718,7 @@ H_ocq_E_compile_I_make(
             g_object_unref( dir_1 );
         if(dir)
             g_object_unref(dir);
-        H_ocq_E_compile_I_make_S_coux_project = g_str_has_suffix( document->file_name, ".cx" );
+        H_ocq_E_compile_I_make_S_cx_project = g_str_has_suffix( document->file_name, ".cx" );
         _Bool ret = H_ocq_E_compile_I_exec(( char *[] ){ "make", "-s", "--", target, null }
         , dir_path
         );
@@ -1658,7 +1658,7 @@ E_ocq_Q_plugin_M( GeanyPlugin *plugin
     gtk_container_add(( void * )scrolled_window, H_ocq_E_doc_com_S_page );
     gtk_notebook_append_page(( void * )geany_data->main_widgets->message_window_notebook
     , scrolled_window
-    , gtk_label_new( "doc-com" )
+    , gtk_label_new( "Doc-com" )
     );
     ui_add_document_sensitive( scrolled_window );
     gtk_widget_show( H_ocq_E_doc_com_S_page );
@@ -1692,8 +1692,6 @@ E_ocq_Q_plugin_M( GeanyPlugin *plugin
     H_ocq_J_gtk_menu_add_item_make( "re_build", rebuild );
     H_ocq_E_geany_Q_menu_I_add_separator(menu);
     H_ocq_J_gtk_menu_add_item_make( "di_st", dist );
-    H_ocq_J_gtk_menu_add_item_make( "pack-_0", pack-0 );
-    H_ocq_J_gtk_menu_add_item_make( "pack-_1", pack-1 );
     H_ocq_E_geany_Q_menu_I_add_separator(menu);
     H_ocq_J_gtk_menu_add_item_make( "most_lyclean", mostlyclean );
     H_ocq_J_gtk_menu_add_item_make( "clea_n", clean );
